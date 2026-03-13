@@ -1,0 +1,71 @@
+{
+  "workspace_id": "workspace-sme-001",
+  "pack_id": "sme-ops-pack",
+  "template_id": "issue-triage-tool",
+  "content_json": {
+    "product_name": "SME Issue Triage Assistant",
+    "sector": "SME Operations",
+    "pack_version": "1.0.0",
+    "use_case_template": "issue triage tool",
+    "workspace_type": "operations",
+    "problem_statement": "Teams lose time routing operational issues and miss SLA targets.",
+    "target_users": [
+      {"role": "Ops Agent", "objective": "Classify and route issues quickly"},
+      {"role": "Ops Manager", "objective": "Monitor queue and escalations"}
+    ],
+    "inputs": [
+      {"input_name": "issue_submission", "type": "form", "source": "manual"},
+      {"input_name": "attachment", "type": "file", "source": "upload"}
+    ],
+    "outputs": [
+      {"output_name": "priority_score", "format": "number"},
+      {"output_name": "routing_recommendation", "format": "text"}
+    ],
+    "data_entities": [
+      {
+        "entity_name": "Issue",
+        "fields": [
+          {"name": "title", "type": "string", "required": true},
+          {"name": "severity", "type": "string", "required": true}
+        ]
+      }
+    ],
+    "screens": [
+      {"screen_name": "Intake", "purpose": "Capture issue", "visible_to": ["Ops Agent"]},
+      {"screen_name": "Queue", "purpose": "Triage queue", "visible_to": ["Ops Agent", "Ops Manager"]}
+    ],
+    "workflow": {
+      "states": ["new", "triaged", "in_progress", "done"],
+      "transitions": [
+        {"from_state": "new", "to_state": "triaged", "action": "triage"},
+        {"from_state": "triaged", "to_state": "in_progress", "action": "assign"},
+        {"from_state": "in_progress", "to_state": "done", "action": "resolve"}
+      ],
+      "actions": ["triage", "assign", "resolve"]
+    },
+    "agents": [
+      {
+        "agent_name": "Triage Agent",
+        "purpose": "Summarize and prioritize incoming issues",
+        "trigger": "on_issue_create",
+        "tools": ["summarizer", "priority-scorer"]
+      }
+    ],
+    "review_gates": [
+      {"gate_name": "Ops Review", "required_for": "generation"},
+      {"gate_name": "Governance Review", "required_for": "publish"}
+    ],
+    "alerts": {"sla_breach": "notify_manager"},
+    "permissions": {"Ops Agent": ["create", "update"], "Ops Manager": ["read", "approve"]},
+    "kpis": ["time_to_triage", "sla_breach_rate"],
+    "test_scenarios": ["high_severity_route", "missing_data_handling"],
+    "publishing_profile": {"environment": "staging", "requires_approval": true},
+    "claims_boundary": "Operational recommendation only; no autonomous final decisions.",
+    "risk_notes": ["Misrouting could delay incident handling"]
+  },
+  "provenance": {
+    "discovery_session_id": "session-001",
+    "template_version": "1.0.0",
+    "pack_release": "2026-03-13"
+  }
+}
